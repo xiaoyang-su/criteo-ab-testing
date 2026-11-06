@@ -1,0 +1,11 @@
+*.pdf
+
+# Ignore all files under data/
+data/**
+
+# Keep directory placeholders
+!data/
+!data/raw/
+!data/processed/
+!data/raw/.gitkeep
+!data/processed/.gitkeep

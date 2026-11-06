@@ -1,0 +1,121 @@
+LICENSE AND THIRD-PARTY DATA NOTICE
+
+1. Original project code and documentation - MIT License
+
+The MIT License below applies to original code and documentation authored for
+this project. It does not apply to the Criteo dataset, adaptations of that
+dataset, third-party publications, or other third-party materials. Those
+materials remain subject to their respective licenses and notices.
+
+MIT License
+
+Copyright (c) 2026 Xiaoyang Su
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+2. Criteo Uplift Modeling Dataset v2.1 - separate data license
+
+Dataset: Criteo Uplift Modeling Dataset, corrected release v2.1
+Provider: Criteo / Criteo AI Lab
+Archive: criteo-research-uplift-v2.1.csv.gz
+License: Creative Commons Attribution-NonCommercial-ShareAlike 4.0
+         International (CC BY-NC-SA 4.0)
+SPDX identifier: CC-BY-NC-SA-4.0
+
+Historical licensing note: the datasheet appendix in the 2021 benchmark paper
+describes the dataset as CC BY-SA 4.0. This project follows the more restrictive
+CC BY-NC-SA 4.0 license identified by Criteo's official hosting page, consistent
+with DATA_CARD.md. Obtain clarification from Criteo before relying on a
+different interpretation.
+
+Official dataset page and data terms:
+https://ailab.criteo.com/criteo-uplift-prediction-dataset/
+
+Official dataset card and download:
+https://huggingface.co/datasets/criteo/criteo-uplift
+
+License summary:
+https://creativecommons.org/licenses/by-nc-sa/4.0/
+
+Full legal terms:
+https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode.en
+
+The project author does not own or relicense the Criteo dataset. The MIT
+License in section 1 does not grant permission to use the dataset commercially
+or remove any conditions imposed by its data license.
+
+When exercising rights under the data license, including sharing the dataset
+or sharing adapted material, comply with the full legal terms. In particular:
+
+- Attribution: give appropriate credit to Criteo, retain supplied attribution
+  and license notices, link to the license and source, and indicate changes.
+  Do not imply that Criteo endorses this project or its results.
+- NonCommercial: use of the licensed dataset and adapted material under this
+  license must be noncommercial. Commercial use requires separate permission
+  from the relevant rights holder.
+- ShareAlike: when sharing adapted material, apply CC BY-NC-SA 4.0 or an
+  adapter's license permitted by its ShareAlike provisions.
+- No additional restrictions: do not impose legal terms or technological
+  measures that restrict recipients from exercising the licensed rights.
+
+These conditions apply to raw data and to processed data, subsets, or other
+outputs to the extent they constitute licensed material or adapted material.
+They do not automatically relicense independently authored analysis code.
+Applicable exceptions and limitations remain available under the full terms.
+
+Repository distribution policy: this project does not commit or redistribute
+raw, extracted, or processed row-level Criteo data, including extracted CSV
+files, Parquet copies, row-level samples, and other transformed row-level
+copies. It distributes only documentation, download and processing code,
+checksums, analytical code, and non-row-level results. Users must obtain the
+dataset directly from Criteo's official source and comply with its data
+license. This is the project's distribution policy; it does not impose
+additional restrictions on rights granted by the original data license.
+
+This section is a notice and summary, not a replacement for the full data
+license. The dataset is supplied without warranties under that license.
+
+3. Dataset attribution and citation
+
+Criteo AI Lab. Criteo Uplift Modeling Dataset, corrected release v2.1.
+Source: https://huggingface.co/datasets/criteo/criteo-uplift
+License: CC BY-NC-SA 4.0.
+Any redistributed adaptation must additionally describe the changes made.
+
+The dataset provider requests citation of the original release. Consistent
+with DATA_CARD.md, this project cites both the original release and the later
+corrected-dataset benchmark:
+
+Eustache Diemert, Artem Betlei, Christophe Renaudin, and Massih-Reza Amini.
+2018. A Large Scale Benchmark for Uplift Modeling.
+Proceedings of the AdKDD and TargetAd Workshop, KDD, London, United Kingdom,
+August 20, 2018.
+https://www.adkdd.org/papers/a-large-scale-benchmark-for-uplift-modeling/2018
+
+Diemert, E., Betlei, A., Renaudin, C., Amini, M.-R., Gregoir, T., and
+Rahier, T. 2021.
+A Large Scale Benchmark for Individual Treatment Effect Prediction and
+Uplift Modeling. arXiv:2111.10106.
+https://arxiv.org/abs/2111.10106
+
+4. Other third-party materials
+
+Third-party libraries, reference implementations, papers, and other materials
+retain their own copyright and license terms. Their inclusion or use does
+not place them under the MIT License above or the Criteo dataset license.
