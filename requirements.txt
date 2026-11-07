@@ -1,0 +1,21 @@
+# Data processing and storage
+duckdb
+pandas
+numpy
+pyarrow
+
+# Statistical analysis
+scipy
+statsmodels
+
+# Machine learning and uplift modeling
+scikit-learn
+
+# Visualization
+matplotlib
+seaborn
+
+# Development and testing
+jupyterlab
+ipykernel
+pytest

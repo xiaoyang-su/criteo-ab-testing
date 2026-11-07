@@ -9,3 +9,13 @@ data/**
 !data/processed/
 !data/raw/.gitkeep
 !data/processed/.gitkeep
+
+# Commit integrity records, while keeping datasets ignored
+!data/CHECKSUMS.txt
+!data/PREPROCESSING.json
+
+# Python environments and generated caches
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
