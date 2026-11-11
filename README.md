@@ -12,10 +12,12 @@ and anonymized, so future estimates will be interpreted within the benchmark
 setting rather than as the original campaigns' incrementality or measured ROI.
 
 **Status:** Data download, SHA256 verification, Gzip CSV-to-Parquet conversion,
-DuckDB connections, and SQL-file execution are implemented. The local raw archive
-and generated Parquet both have entries in `data/CHECKSUMS.txt`. Schema auditing,
-experiment metrics, and statistical analysis remain pending; the two files in
-`sql/` are currently empty placeholders.
+DuckDB connections, SQL-file execution, schema auditing, and experiment-metric
+aggregation are implemented. The local raw archive and generated Parquet both
+have entries in `data/CHECKSUMS.txt`. The committed audit confirms 13,979,592 rows,
+the expected 16-column schema, and passing data-integrity checks. Arm summaries
+and joint cell counts are saved under `results/`. Randomization diagnostics and
+statistical inference remain pending.
 
 See the [data card](DATA_CARD.md) for source, fields, limitations, licensing, and
 citations, and the [analysis plan](ANALYSIS_PLAN.md) for the planned methodology.
@@ -70,9 +72,9 @@ record causes an error rather than silently replacing the integrity baseline.
 
 ## Running SQL files
 
-Write and save your SQL in `sql/` before executing it. The current placeholder
-files need content; the runner rejects an empty file. Each run verifies the
-Parquet and registers it as the session view **`criteo`**, which your SQL can query.
+The implemented SQL files in `sql/` audit the dataset and aggregate experiment
+metrics. You can also add your own SQL; the runner rejects an empty file. Each run
+verifies the Parquet and registers it as the session view **`criteo`**, which your SQL can query.
 Each run uses a new DuckDB connection; a separate database server is unnecessary.
 
 To choose a SQL file from a numbered menu:
@@ -104,6 +106,61 @@ complete final result to CSV in batches of 10,000 rows, including a header, and
 refuses to overwrite an existing output. Paths supplied to the runner, including
 relative paths inside SQL, are resolved from the project root.
 
+### Schema audit and experiment aggregates
+
+Run the schema audit to preview its checks:
+
+```powershell
+python -m src.run_sql sql/00_schema_audit.sql --preview-rows 50
+```
+
+The audit checks row count, column names and types, binary-field validity,
+missing values, non-finite feature values, overall outcome rates, and the
+constraints that control users have no exposure and conversions imply visits.
+It also reports feature ranges, means, and approximate distinct counts as
+informational rows, with no pass/fail value. Means of encoded categorical
+features are descriptive numeric summaries, not covariate-balance evidence.
+The committed output is `results/schema_audit.csv`; all 38 pass/fail checks pass,
+alongside 12 informational feature summaries. These checks establish data
+integrity, not treatment randomization or statistical significance.
+
+To export a fresh audit, choose a new output path because the runner refuses to
+overwrite an existing `--output` file:
+
+```powershell
+python -m src.run_sql sql/00_schema_audit.sql --output results/schema_audit_rerun.csv
+```
+
+Generate the experiment aggregates with:
+
+```powershell
+python -m src.run_sql sql/02_experiment_metrics.sql
+```
+
+This SQL file uses two `COPY` statements to write its outputs directly:
+
+| Output | Contents |
+| --- | --- |
+| `results/arm_summary.csv` | Sample size, visit/conversion/exposure counts, and corresponding rates by `treatment` |
+| `results/cell_counts.csv` | Counts for observed combinations of `treatment`, `exposure`, `visit`, and `conversion` |
+
+Run this file without `--output`: both CSV destinations are already specified
+inside the SQL. Re-running it overwrites those two CSVs through DuckDB's `COPY`;
+the runner's refusal to overwrite applies only to its own `--output` export.
+The final console result is the last `COPY` statement's status, not the contents
+of both exported tables.
+
+The committed arm summary contains these descriptive results:
+
+| Assignment | Users | Visits | Conversions | Visit rate | Conversion rate | Exposure rate |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Control (`treatment=0`) | 2,096,937 | 80,105 | 4,063 | 3.820096% | 0.193759% | 0% |
+| Treatment (`treatment=1`) | 11,882,655 | 576,824 | 36,711 | 4.854336% | 0.308946% | 3.603673% |
+
+These aggregate counts support subsequent unadjusted binary-outcome inference.
+Confidence intervals, hypothesis tests, power/MDE, and covariate adjustment are
+planned work; covariate adjustment requires additional feature-level data.
+
 The standalone DuckDB CLI is another optional way to explore data interactively.
 It runs independently of these Python scripts and does not automatically apply
 the project's checksum verification, connection settings, or `criteo` view.
@@ -126,8 +183,8 @@ Project/
 |   |-- prepare_data.py             # Verified Gzip CSV-to-Parquet conversion
 |   `-- run_sql.py                  # SQL selection, execution, preview, and export
 |-- sql/
-|   |-- 00_schema_audit.sql          # Empty placeholder
-|   `-- 02_experiment_metrics.sql    # Empty placeholder
+|   |-- 00_schema_audit.sql          # Schema, integrity, and feature summaries
+|   `-- 02_experiment_metrics.sql    # Export arm metrics and joint cell counts
 |-- tests/
 |   |-- test_checksums.py
 |   |-- test_download.py
@@ -137,7 +194,10 @@ Project/
 |   |-- raw/                        # Downloaded archive; ignored by Git
 |   |-- processed/                  # Generated Parquet; ignored by Git
 |   `-- tmp/                        # DuckDB spill directory; generated as needed
-|-- results/                        # Query outputs; only aggregates belong in Git
+|-- results/                        # Aggregate query outputs committed to Git
+|   |-- schema_audit.csv            # Data-integrity checks and feature summaries
+|   |-- arm_summary.csv             # Counts and rates by treatment assignment
+|   `-- cell_counts.csv             # Joint assignment/exposure/outcome counts
 |-- notebooks/                      # Reserved for subsequent analysis
 `-- dashboard/                      # Reserved for subsequent presentation
 ```
