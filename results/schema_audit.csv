@@ -1,0 +1,51 @@
+check_name,observed,expected,passed
+row_count,13979592,13979592,True
+binary_treatment,0,0 invalid rows,True
+binary_conversion,0,0 invalid rows,True
+binary_visit,0,0 invalid rows,True
+binary_exposure,0,0 invalid rows,True
+null_f0,0,0,True
+null_f1,0,0,True
+null_f2,0,0,True
+null_f3,0,0,True
+null_f4,0,0,True
+null_f5,0,0,True
+null_f6,0,0,True
+null_f7,0,0,True
+null_f8,0,0,True
+null_f9,0,0,True
+null_f10,0,0,True
+null_f11,0,0,True
+null_treatment,0,0,True
+null_conversion,0,0,True
+null_visit,0,0,True
+null_exposure,0,0,True
+nonfinite_f0,0,0 (NaN or +/-Inf),True
+schema_columns_types,All16 columns match,All 16 columns match,True
+nonfinite_f1,0,0 (NaN or +/-Inf),True
+nonfinite_f2,0,0 (NaN or +/-Inf),True
+nonfinite_f3,0,0 (NaN or +/-Inf),True
+nonfinite_f4,0,0 (NaN or +/-Inf),True
+nonfinite_f5,0,0 (NaN or +/-Inf),True
+nonfinite_f6,0,0 (NaN or +/-Inf),True
+nonfinite_f7,0,0 (NaN or +/-Inf),True
+nonfinite_f8,0,0 (NaN or +/-Inf),True
+nonfinite_f9,0,0 (NaN or +/-Inf),True
+nonfinite_f10,0,0 (NaN or +/-Inf),True
+nonfinite_f11,0,0 (NaN or +/-Inf),True
+visit_rate,4.6992%,4.6992% +/- 0.05 percentage points,True
+conversion_rate,0.291668%,0.292% +/- 0.01 percentage points,True
+treatment_x_exposure,T0E1=0,T0E1 is 0,True
+conversion_x_visit,C1V0=0,C1V0 is 0,True
+feature_f0,min=12.616365; max=26.745255; mean=19.620297; approx_distinct=2033001,informational,
+feature_f1,min=10.059654; max=16.344187; mean=10.069977; approx_distinct=59,informational,
+feature_f2,min=8.214383; max=9.051962; mean=8.446582; approx_distinct=2057890,informational,
+feature_f3,min=-8.398387; max=4.679882; mean=4.178923; approx_distinct=558,informational,
+feature_f4,min=10.280525; max=21.123508; mean=10.338837; approx_distinct=263,informational,
+feature_f5,min=-9.011892; max=4.115453; mean=4.028513; approx_distinct=130,informational,
+feature_f6,min=-31.429784; max=0.294443; mean=-4.155356; approx_distinct=1677,informational,
+feature_f7,min=4.833815; max=11.998401; mean=5.101765; approx_distinct=638194,informational,
+feature_f8,min=3.635107; max=3.971858; mean=3.933581; approx_distinct=3724,informational,
+feature_f9,min=13.190056; max=75.295017; mean=16.027638; approx_distinct=1599,informational,
+feature_f10,min=5.300375; max=6.473917; mean=5.333396; approx_distinct=523805,informational,
+feature_f11,min=-1.383941; max=-0.168679; mean=-0.170967; approx_distinct=138,informational,
