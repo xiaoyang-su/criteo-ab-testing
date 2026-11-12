@@ -6,18 +6,22 @@ records from randomized advertising incrementality tests. The central question
 is whether advertising eligibility increased website visits relative to holdout
 assignment, with conversions as a secondary business outcome.
 
-The planned analysis uses `treatment` for assignment-based comparisons. Actual
+The analysis uses `treatment` for assignment-based comparisons. Actual
 advertising `exposure` occurs after assignment. The released data were subsampled
 and anonymized, so future estimates will be interpreted within the benchmark
 setting rather than as the original campaigns' incrementality or measured ROI.
 
 **Status:** Data download, SHA256 verification, Gzip CSV-to-Parquet conversion,
-DuckDB connections, SQL-file execution, schema auditing, and experiment-metric
-aggregation are implemented. The local raw archive and generated Parquet both
+DuckDB connections, SQL-file execution, schema auditing, experiment-metric
+aggregation, allocation auditing, and covariate-balance diagnostics are
+implemented. The local raw archive and generated Parquet both
 have entries in `data/CHECKSUMS.txt`. The committed audit confirms 13,979,592 rows,
 the expected 16-column schema, and passing data-integrity checks. Arm summaries
-and joint cell counts are saved under `results/`. Randomization diagnostics and
-statistical inference remain pending.
+and joint cell counts, allocation counts, and covariate summaries are saved under
+`results/`. The completed [validation notebook](notebooks/01_validation.ipynb)
+includes an illustrative SRM assessment, balance diagnostics, a categorical
+balance chart, and a validation summary. Treatment-effect inference, power/MDE,
+and variance reduction remain pending.
 
 See the [data card](DATA_CARD.md) for source, fields, limitations, licensing, and
 citations, and the [analysis plan](ANALYSIS_PLAN.md) for the planned methodology.
@@ -72,8 +76,9 @@ record causes an error rather than silently replacing the integrity baseline.
 
 ## Running SQL files
 
-The implemented SQL files in `sql/` audit the dataset and aggregate experiment
-metrics. You can also add your own SQL; the runner rejects an empty file. Each run
+The implemented SQL files in `sql/` audit the dataset, summarize allocation and
+covariates, and aggregate experiment metrics. You can also add your own SQL; the
+runner rejects an empty file. Each run
 verifies the Parquet and registers it as the session view **`criteo`**, which your SQL can query.
 Each run uses a new DuckDB connection; a separate database server is unnecessary.
 
@@ -158,12 +163,67 @@ The committed arm summary contains these descriptive results:
 | Treatment (`treatment=1`) | 11,882,655 | 576,824 | 36,711 | 4.854336% | 0.308946% | 3.603673% |
 
 These aggregate counts support subsequent unadjusted binary-outcome inference.
-Confidence intervals, hypothesis tests, power/MDE, and covariate adjustment are
-planned work; covariate adjustment requires additional feature-level data.
+Treatment-effect confidence intervals and hypothesis tests, power/MDE, and
+covariate adjustment are planned work; covariate adjustment requires additional
+feature-level data.
 
 The standalone DuckDB CLI is another optional way to explore data interactively.
 It runs independently of these Python scripts and does not automatically apply
 the project's checksum verification, connection settings, or `criteo` view.
+
+## Experiment validation
+
+Generate the allocation and covariate summaries from the verified Parquet:
+
+```powershell
+python -m src.run_sql sql/01_randomization.sql
+```
+
+The SQL exports three aggregate tables directly through `COPY`:
+
+| Output | Contents |
+| --- | --- |
+| `results/allocation_audit.csv` | Sample size and allocation share by `treatment` |
+| `results/covariate_balance_smd.csv` | Within-arm means and sample variances for continuous features `f0`, `f2`, `f7`, and `f10` |
+| `results/covariate_balance_proportion.csv` | Category-level counts and within-arm proportions for the eight encoded categorical features |
+
+Run this SQL without `--output`; its destinations are defined in the file.
+Re-running it overwrites these three CSVs. The final console result reports the
+last `COPY` status, rather than displaying the diagnostic tables. The SQL
+prepares the inputs; SMDs, SRM tests, TVD, and maximum category-proportion
+differences are calculated in the notebook.
+
+Open [01_validation.ipynb](notebooks/01_validation.ipynb) with the `abtest` kernel
+and run its cells in order. First generate `arm_summary.csv` and `cell_counts.csv`
+with `sql/02_experiment_metrics.sql`, as described above. The notebook re-runs the
+schema audit and `sql/01_randomization.sql`, then reads the aggregate CSVs. Its
+setup cell currently contains a local absolute project path; adapt `root` to
+your checkout and ensure the project root is on the kernel's Python import path
+so that `src.run_sql` can be imported.
+
+The committed notebook reports:
+
+| Diagnostic | Result | Interpretation |
+| --- | --- | --- |
+| Allocation | 11,882,655 treatment and 2,096,937 control observations; treatment share 85.000013% | Consistent with an approximately 85%/15% split |
+| Illustrative SRM | Pearson chi-squared p = 0.998924; two-sided exact binomial p = 0.999402 | No mismatch detected when the expected treatment probability is assumed to be exactly 0.85 |
+| Continuous covariates | All four absolute SMDs below 0.022; maximum 0.021270 for `f7` | Small mean differences relative to the notebook's descriptive 0.10 reference |
+| Categorical covariates | TVD ranges from 0.000966 (`f11`) to 0.013841 (`f3`); largest category gap is 1.379447 percentage points for `f3` | Small absolute marginal differences; no categorical pass/fail cutoff is specified |
+
+The categorical balance chart ranks all eight features by TVD in a horizontal
+bar chart with value labels. The validation summary combines these diagnostics
+with the 38 passing integrity checks and supports proceeding to ITT estimation
+for the released sample.
+
+The exact expected assignment probability for the released sample is unavailable,
+so the SRM results are assumption-dependent and do not establish a definitive
+formal SRM pass. Marginal covariate balance does not prove randomization or
+establish joint-distribution balance; treatment-assignment predictability has
+not been assessed. Missing user IDs, experiment IDs, and timestamps limit further
+validation, while non-uniform negative-label sampling limits generalization to
+the original advertising populations. Subsequent inference will compare the
+full assigned arms using `treatment`, with `visit` as the primary outcome and
+`conversion` as the secondary outcome.
 
 ## Project structure
 
@@ -184,6 +244,7 @@ Project/
 |   `-- run_sql.py                  # SQL selection, execution, preview, and export
 |-- sql/
 |   |-- 00_schema_audit.sql          # Schema, integrity, and feature summaries
+|   |-- 01_randomization.sql         # Export allocation and covariate summaries
 |   `-- 02_experiment_metrics.sql    # Export arm metrics and joint cell counts
 |-- tests/
 |   |-- test_checksums.py
@@ -197,8 +258,12 @@ Project/
 |-- results/                        # Aggregate query outputs committed to Git
 |   |-- schema_audit.csv            # Data-integrity checks and feature summaries
 |   |-- arm_summary.csv             # Counts and rates by treatment assignment
-|   `-- cell_counts.csv             # Joint assignment/exposure/outcome counts
-|-- notebooks/                      # Reserved for subsequent analysis
+|   |-- cell_counts.csv             # Joint assignment/exposure/outcome counts
+|   |-- allocation_audit.csv        # Assignment counts and allocation shares
+|   |-- covariate_balance_smd.csv    # Continuous-feature means and variances
+|   `-- covariate_balance_proportion.csv # Category counts and proportions
+|-- notebooks/
+|   `-- 01_validation.ipynb          # Integrity, allocation, SRM, and balance report
 `-- dashboard/                      # Reserved for subsequent presentation
 ```
 
