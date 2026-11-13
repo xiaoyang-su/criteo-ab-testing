@@ -8,7 +8,7 @@ assignment, with conversions as a secondary business outcome.
 
 The analysis uses `treatment` for assignment-based comparisons. Actual
 advertising `exposure` occurs after assignment. The released data were subsampled
-and anonymized, so future estimates will be interpreted within the benchmark
+and anonymized, so estimates are interpreted within the benchmark
 setting rather than as the original campaigns' incrementality or measured ROI.
 
 **Status:** Data download, SHA256 verification, Gzip CSV-to-Parquet conversion,
@@ -20,8 +20,12 @@ the expected 16-column schema, and passing data-integrity checks. Arm summaries
 and joint cell counts, allocation counts, and covariate summaries are saved under
 `results/`. The completed [validation notebook](notebooks/01_validation.ipynb)
 includes an illustrative SRM assessment, balance diagnostics, a categorical
-balance chart, and a validation summary. Treatment-effect inference, power/MDE,
-and variance reduction remain pending.
+balance chart, and a validation summary. The completed
+[ITT inference notebook](notebooks/02_itt_inference.ipynb) adds absolute and
+relative lift, two-proportion z-tests, 95% confidence intervals, and binomial
+bootstrap checks for visits and conversions. Both notebooks use labeled English
+output with consistent numeric formatting. Power/MDE and variance reduction
+remain pending.
 
 See the [data card](DATA_CARD.md) for source, fields, limitations, licensing, and
 citations, and the [analysis plan](ANALYSIS_PLAN.md) for the planned methodology.
@@ -162,10 +166,9 @@ The committed arm summary contains these descriptive results:
 | Control (`treatment=0`) | 2,096,937 | 80,105 | 4,063 | 3.820096% | 0.193759% | 0% |
 | Treatment (`treatment=1`) | 11,882,655 | 576,824 | 36,711 | 4.854336% | 0.308946% | 3.603673% |
 
-These aggregate counts support subsequent unadjusted binary-outcome inference.
-Treatment-effect confidence intervals and hypothesis tests, power/MDE, and
-covariate adjustment are planned work; covariate adjustment requires additional
-feature-level data.
+These aggregate counts feed the completed unadjusted ITT analysis in
+`notebooks/02_itt_inference.ipynb`. Power/MDE and covariate adjustment remain
+planned work; covariate adjustment requires additional feature-level data.
 
 The standalone DuckDB CLI is another optional way to explore data interactively.
 It runs independently of these Python scripts and does not automatically apply
@@ -198,8 +201,8 @@ and run its cells in order. First generate `arm_summary.csv` and `cell_counts.cs
 with `sql/02_experiment_metrics.sql`, as described above. The notebook re-runs the
 schema audit and `sql/01_randomization.sql`, then reads the aggregate CSVs. Its
 setup cell currently contains a local absolute project path; adapt `root` to
-your checkout and ensure the project root is on the kernel's Python import path
-so that `src.run_sql` can be imported.
+your checkout. The setup changes the working directory and adds that root to
+the kernel's Python import path before importing `src.run_sql`.
 
 The committed notebook reports:
 
@@ -221,9 +224,59 @@ formal SRM pass. Marginal covariate balance does not prove randomization or
 establish joint-distribution balance; treatment-assignment predictability has
 not been assessed. Missing user IDs, experiment IDs, and timestamps limit further
 validation, while non-uniform negative-label sampling limits generalization to
-the original advertising populations. Subsequent inference will compare the
+the original advertising populations. The ITT inference notebook compares the
 full assigned arms using `treatment`, with `visit` as the primary outcome and
 `conversion` as the secondary outcome.
+
+## ITT inference
+
+Open [02_itt_inference.ipynb](notebooks/02_itt_inference.ipynb) with the `abtest`
+kernel after reviewing Notebook 01's validation report. Adapt the setup cell's
+`root` path to your checkout and run the cells in order. The notebook runs
+`sql/02_experiment_metrics.sql`, overwriting its two aggregate CSV outputs, then
+reads `results/arm_summary.csv`. Inference results are displayed and retained in
+the notebook; it does not export a separate inference-results CSV.
+
+The implemented analysis includes:
+
+- Absolute differences in assigned-arm outcome proportions and relative lift
+  against the control rate, retaining all observations in each assigned arm.
+- Two-sided, pooled two-proportion z-tests for equality of outcome rates.
+- Newcombe 95% confidence intervals for absolute differences, using the
+  installed statsmodels default for `compare="diff"`.
+- Aggregate binomial bootstrap checks with fixed arm sizes, 99,999 replicates,
+  percentile intervals, and bootstrap standard errors.
+
+The committed results are:
+
+| Measure | Visit (primary) | Conversion (secondary) |
+| --- | ---: | ---: |
+| Absolute lift (percentage points) | +1.034240 | +0.115187 |
+| Relative lift | +27.073676% | +59.448812% |
+| z-statistic | 65.247430 | 28.516529 |
+| Two-sided p-value | Numerical underflow; reported as `0.0` | 7.308263e-179 |
+| Analytical 95% CI (percentage points) | [1.005492, 1.062848] | [0.108377, 0.121852] |
+| Bootstrap percentile 95% CI (percentage points) | [1.005523, 1.062876] | [0.108421, 0.121954] |
+
+Both outcome-specific tests reject equal rates at the 5% reference level, and
+both analytical intervals exclude zero. The visit p-value is too small for the
+calculation to represent as a positive floating-point value; `0.0` is not a
+mathematically zero probability. Absolute lift is expressed in percentage
+points, while relative lift is a percentage increase against the control rate.
+The notebook calculates intervals for absolute lift only, with no multiplicity
+adjustment across outcomes.
+
+The bootstrap intervals closely match the analytical intervals under the shared
+independent-binomial assumptions. The generator is initialized with seed 42 in
+the visit bootstrap cell and reused for conversion; reset it and run both cells
+in sequence for reproducibility. Saved bootstrap summaries reflect the recorded
+execution history, so a fresh sequential run may differ slightly.
+
+These positive, precisely estimated contrasts describe the released benchmark.
+The bootstrap does not resolve dependence between observations, pooled-experiment
+heterogeneity, or non-uniform release sampling. The analysis supplies an
+unadjusted reference for subsequent power/MDE and covariate-adjustment work;
+it does not by itself establish original-campaign incrementality or profitability.
 
 ## Project structure
 
@@ -263,7 +316,8 @@ Project/
 |   |-- covariate_balance_smd.csv    # Continuous-feature means and variances
 |   `-- covariate_balance_proportion.csv # Category counts and proportions
 |-- notebooks/
-|   `-- 01_validation.ipynb          # Integrity, allocation, SRM, and balance report
+|   |-- 01_validation.ipynb          # Integrity, allocation, SRM, and balance report
+|   `-- 02_itt_inference.ipynb       # Lift, z-tests, confidence intervals, and bootstrap
 `-- dashboard/                      # Reserved for subsequent presentation
 ```
 
