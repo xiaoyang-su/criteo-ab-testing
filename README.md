@@ -1,6 +1,6 @@
-# Criteo Advertising Incrementality: An A/B Testing Portfolio
+# Criteo Advertising Incrementality Analysis
 
-This data science portfolio develops a reproducible, retrospective analysis of
+The project develops a reproducible, retrospective analysis of
 Criteo's corrected Uplift v2.1 benchmark, reported to contain 13,979,592 user-level
 records from randomized advertising incrementality tests. The central question
 is whether advertising eligibility increased website visits relative to holdout
