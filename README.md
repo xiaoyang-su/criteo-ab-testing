@@ -23,9 +23,11 @@ includes an illustrative SRM assessment, balance diagnostics, a categorical
 balance chart, and a validation summary. The completed
 [ITT inference notebook](notebooks/02_itt_inference.ipynb) adds absolute and
 relative lift, two-proportion z-tests, 95% confidence intervals, and binomial
-bootstrap checks for visits and conversions. Both notebooks use labeled English
-output with consistent numeric formatting. Power/MDE and variance reduction
-remain pending.
+bootstrap checks for visits and conversions. The completed
+[power/MDE notebook](notebooks/03_power_mde.ipynb) adds reverse MDE calculations,
+relative MDE, sample-size requirements, and allocation scenarios. All three
+notebooks use labeled English output with consistent numeric formatting.
+Variance reduction remains pending.
 
 See the [data card](DATA_CARD.md) for source, fields, limitations, licensing, and
 citations, and the [analysis plan](ANALYSIS_PLAN.md) for the planned methodology.
@@ -167,8 +169,9 @@ The committed arm summary contains these descriptive results:
 | Treatment (`treatment=1`) | 11,882,655 | 576,824 | 36,711 | 4.854336% | 0.308946% | 3.603673% |
 
 These aggregate counts feed the completed unadjusted ITT analysis in
-`notebooks/02_itt_inference.ipynb`. Power/MDE and covariate adjustment remain
-planned work; covariate adjustment requires additional feature-level data.
+`notebooks/02_itt_inference.ipynb` and the power/MDE calculations in
+`notebooks/03_power_mde.ipynb`. Covariate adjustment remains planned work and
+requires additional feature-level data.
 
 The standalone DuckDB CLI is another optional way to explore data interactively.
 It runs independently of these Python scripts and does not automatically apply
@@ -275,8 +278,49 @@ execution history, so a fresh sequential run may differ slightly.
 These positive, precisely estimated contrasts describe the released benchmark.
 The bootstrap does not resolve dependence between observations, pooled-experiment
 heterogeneity, or non-uniform release sampling. The analysis supplies an
-unadjusted reference for subsequent power/MDE and covariate-adjustment work;
+unadjusted reference for the power/MDE analysis and subsequent covariate adjustment;
 it does not by itself establish original-campaign incrementality or profitability.
+
+## Power and minimum detectable effect
+
+Open [03_power_mde.ipynb](notebooks/03_power_mde.ipynb) with the `abtest` kernel,
+adapt the setup cell's `root` path to your checkout, and run its cells in order.
+The notebook runs `sql/02_experiment_metrics.sql` and reads
+`results/arm_summary.csv`. Results are retained in the notebook's tables and
+figures; no separate power/MDE results CSV is exported.
+
+The calculations fix two-sided **alpha at 0.05** and **target power at 80%**.
+Reverse MDE holds the observed arm sizes and control baseline fixed and solves
+for the absolute effect using Brent's root-finding method. Relative MDE divides
+that effect, in probability units, by the corresponding control baseline.
+A separate local approximation provides the additional MDE outputs below.
+
+| Measure | Visit | Conversion |
+| --- | ---: | ---: |
+| Reverse MDE (percentage points) | 0.040354 | 0.009369 |
+| Relative MDE | 1.056356% | 4.835479% |
+| Approximate MDE (percentage points) | 0.040224 | 0.009228 |
+
+Sample-size scenarios instead fix relative lift at 2%, 5%, or 10%, convert it
+to an absolute target using the control baseline, and retain the observed
+treatment-to-control allocation ratio. The committed total requirements are:
+
+| Target relative lift | Visit: required total observations | Conversion: required total observations |
+| --- | ---: | ---: |
+| 2% | 3,922,324 | 80,286,055 |
+| 5% | 638,939 | 13,088,026 |
+| 10% | 164,444 | 3,372,635 |
+
+The sample-size figures plot these requirements against target relative lift
+at fixed 80% power, with separate control, treatment, and total curves.
+
+Allocation scenarios hold the total sample at **13,979,592 observations** and
+vary the **control share from 5% to 95% in 5-percentage-point steps**. Among
+these tested allocations, **50% control / 50% treatment** gives the smallest
+MDE for both outcomes: **0.028777 percentage points for visits** and
+**0.006646 percentage points for conversions**. The allocation figures highlight
+those minima. The final Design Implications summarizes the calculated MDEs,
+the 2% relative-lift sample requirements, and the lowest-MDE tested allocation.
 
 ## Project structure
 
@@ -317,7 +361,8 @@ Project/
 |   `-- covariate_balance_proportion.csv # Category counts and proportions
 |-- notebooks/
 |   |-- 01_validation.ipynb          # Integrity, allocation, SRM, and balance report
-|   `-- 02_itt_inference.ipynb       # Lift, z-tests, confidence intervals, and bootstrap
+|   |-- 02_itt_inference.ipynb       # Lift, z-tests, confidence intervals, and bootstrap
+|   `-- 03_power_mde.ipynb           # Reverse MDE, sample sizes, and allocation scenarios
 `-- dashboard/                      # Reserved for subsequent presentation
 ```
 
